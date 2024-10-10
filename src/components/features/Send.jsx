@@ -153,6 +153,23 @@ export default function Send() {
                     hidden
                   />
                 </Button>
+                {importedAddresses.length > 0 && (
+                  <Button
+                    as="label"
+                    htmlFor="fileInput"
+                    bg="brand.200"
+                    color="brand.100"
+                  >
+                    Send funds
+                    <Input
+                      id="fileInput"
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileChange}
+                      hidden
+                    />
+                  </Button>
+                )}
               </VStack>
             </VStack>
           )}
