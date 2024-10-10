@@ -32,6 +32,17 @@ export default function Send() {
     setAddresses(newAddresses);
   };
 
+  const handleImportedAddresses = (addresses) => {
+    // Assuming addresses is a CSV string
+    const addressList = addresses
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line);
+
+    // Process the address list (e.g., store it in state, log it, etc.)
+    console.log(addressList); // Replace this with your desired logic
+  };
+
   return (
     <>
       <VStack minH="80vh" justify="center" align={"center"} gap="16px">
@@ -77,22 +88,28 @@ export default function Send() {
               </VStack>
               <VStack align="left" w="full">
                 <Text>List of addresses</Text>
-                <Input type="file" placeholder="Upload CSV" onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = (e) => {
-                    const text = e.target.result;
-                    const rows = text.split('\n').map(row => row.split(','));
-                    const addresses = rows.map(row => ({
-                      amount: row[0],
-                      address: row[1]
-                    }));
-                    // Assuming there's a function to handle the extracted addresses
-                    handleImportedAddresses(addresses);
-                  };
-                  reader.readAsText(file);
-                }} />
+                <Input
+                  type="file"
+                  placeholder="Upload CSV"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      const text = e.target.result;
+                      const rows = text
+                        .split("\n")
+                        .map((row) => row.split(","));
+                      const addresses = rows.map((row) => ({
+                        amount: row[0],
+                        address: row[1],
+                      }));
+                      // Assuming there's a function to handle the extracted addresses
+                      handleImportedAddresses(addresses);
+                    };
+                    reader.readAsText(file);
+                  }}
+                />
                 <Button>Import from CSV</Button>
               </VStack>
             </VStack>
