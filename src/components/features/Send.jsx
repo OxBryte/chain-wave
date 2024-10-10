@@ -12,8 +12,10 @@ import { useState } from "react"; // Import useState
 import { CgCloseO } from "react-icons/cg";
 
 export default function Send() {
-  const [selectTab, setSelectTab] = useState(0); // Initialize state for tab selection
-  const [addresses, setAddresses] = useState([""]); // Initialize state for addresses
+  const [selectTab, setSelectTab] = useState(0);
+  const [addresses, setAddresses] = useState([""]);
+  const [amount, setAmount] = useState("");
+  const [importedAddresses, setImportedAddresses] = useState([]);
 
   const tabs = ["Manual Send", "Import from CSV"]; // Tabs array
 
@@ -32,15 +34,33 @@ export default function Send() {
     setAddresses(newAddresses);
   };
 
-  const handleImportedAddresses = (addresses) => {
-    // Assuming addresses is a CSV string
-    const addressList = addresses
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    // Process the address list (e.g., store it in state, log it, etc.)
-    console.log(addressList); // Replace this with your desired logic
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      const rows = text.split("\n").filter((row) => row.trim() !== "");
+      const parsedAddresses = rows.map((row) => {
+        const [address, amount] = row.split(",");
+        return { address: address.trim(), amount: amount.trim() };
+      });
+      setImportedAddresses(parsedAddresses);
+      console.log("Imported addresses:", parsedAddresses);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportedAddressChange = (index, field, value) => {
+    const updatedAddresses = [...importedAddresses];
+    updatedAddresses[index][field] = value;
+    setImportedAddresses(updatedAddresses);
+  };
+
+  const removeImportedAddressField = (index) => {
+    const updatedAddresses = importedAddresses.filter((_, i) => i !== index);
+    setImportedAddresses(updatedAddresses);
   };
 
   return (
@@ -83,34 +103,56 @@ export default function Send() {
           {tabs[selectTab] === "Import from CSV" && (
             <VStack align="left" gap="16px" w="full">
               <VStack align="left" w="full">
-                <Text>Amount to send</Text>
-                <Input type="number" placeholder="Enter Amount" />
-              </VStack>
-              <VStack align="left" w="full">
                 <Text>List of addresses</Text>
-                <Input
-                  type="file"
-                  placeholder="Upload CSV"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                      const text = e.target.result;
-                      const rows = text
-                        .split("\n")
-                        .map((row) => row.split(","));
-                      const addresses = rows.map((row) => ({
-                        amount: row[0],
-                        address: row[1],
-                      }));
-                      // Assuming there's a function to handle the extracted addresses
-                      handleImportedAddresses(addresses);
-                    };
-                    reader.readAsText(file);
-                  }}
-                />
-                <Button>Import from CSV</Button>
+                {importedAddresses.length > 0 &&
+                  importedAddresses.map((imported, index) => (
+                    <Flex key={index} align="center" gap="8px">
+                      {" "}
+                      <Input
+                        type="text"
+                        placeholder={`Enter address ${index + 1}`}
+                        value={imported.address}
+                        onChange={(e) =>
+                          handleImportedAddressChange(
+                            index,
+                            "address",
+                            e.target.value
+                          )
+                        }
+                      />
+                      <Input
+                        type="text"
+                        w="100px"
+                        placeholder={`Enter amount ${index + 1}`}
+                        value={imported.amount}
+                        onChange={(e) =>
+                          handleImportedAddressChange(
+                            index,
+                            "amount",
+                            e.target.value
+                          )
+                        }
+                      />
+                      <Button onClick={() => removeImportedAddressField(index)}>
+                        <CgCloseO />
+                      </Button>{" "}
+                    </Flex>
+                  ))}
+                <Button
+                  as="label"
+                  htmlFor="fileInput"
+                  bg="brand.200"
+                  color="brand.100"
+                >
+                  Import CSV
+                  <Input
+                    id="fileInput"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                    hidden
+                  />
+                </Button>
               </VStack>
             </VStack>
           )}
@@ -119,7 +161,12 @@ export default function Send() {
             <VStack align="left" gap="16px" w="full">
               <VStack align="left" w="full">
                 <Text>Amount to send</Text>
-                <Input type="number" placeholder="Enter Amount" />
+                <Input
+                  type="number"
+                  placeholder="Enter Amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
               </VStack>
               <VStack align="left" w="full">
                 <Text>List of addresses</Text>
