@@ -1,6 +1,6 @@
 import { Box } from "@chakra-ui/react";
 import "./App.css";
-import Hero from "./components/features/hero";
+import Hero from "./components/features/Hero";
 import Send from "./components/features/Send";
 
 function App() {
