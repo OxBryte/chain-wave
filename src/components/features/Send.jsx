@@ -8,14 +8,34 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import {
+  ConnectWallet,
+  useAddress,
+  useBalance,
+  useContract,
+  useContractWrite,
+} from "@thirdweb-dev/react";
+import { ethers } from "ethers";
 import { useState } from "react"; // Import useState
 import { CgCloseO } from "react-icons/cg";
+import { contractABI, contractAddress } from "../constants/constant";
 
 export default function Send() {
   const [selectTab, setSelectTab] = useState(0);
   const [addresses, setAddresses] = useState([""]);
   const [amount, setAmount] = useState("");
   const [importedAddresses, setImportedAddresses] = useState([]);
+
+  const address = useAddress();
+  const { data: balance } = useBalance();
+  //   console.log(balance);
+
+  const { contract } = useContract(contractAddress, contractABI);
+  const {
+    mutateAsync: sendETH,
+    isLoading,
+    error,
+  } = useContractWrite(contract, "sendETH");
 
   const tabs = ["Manual Send", "Import from CSV"]; // Tabs array
 
@@ -63,6 +83,20 @@ export default function Send() {
     setImportedAddresses(updatedAddresses);
   };
 
+  const handleSendTokens = async () => {
+    if (!contract && !address) return;
+
+    const _recipients = addresses.filter((address) => address !== "");
+    const _amounts = Array(_recipients.length).fill(ethers.utils.parseEther(amount.toString()));
+
+    try {
+      await sendETH({ args: [_recipients, _amounts] });
+      console.log("Tokens sent successfully", _recipients, _amounts);
+    } catch (error) {
+      console.log("Error sending tokens:", error);
+    }
+  };
+
   return (
     <>
       <VStack minH="80vh" justify="center" align={"center"} gap="16px">
@@ -76,7 +110,12 @@ export default function Send() {
           px="16px"
         >
           <Text>Balance</Text>
-          <Text>3,000,000 Eth</Text>
+          <Text>
+            {balance
+              ? parseFloat(ethers.utils.formatEther(balance.value)).toFixed(4)
+              : "0.00"}{" "}
+            {balance?.symbol}
+          </Text>
         </Flex>
         <VStack
           minH="360px"
@@ -211,10 +250,18 @@ export default function Send() {
                 <FormLabel m="0">Auto send</FormLabel>
                 <Switch size="md" colorScheme="brand" />
               </FormControl>
-              <Button w="full" bg="brand.200" color="brand.100">
-                Send Funds
-              </Button>
-              {/* <Button>Connect Wallet</Button> */}
+              {address ? (
+                <Button
+                  w="full"
+                  bg="brand.200"
+                  color="brand.100"
+                  onClick={() => handleSendTokens()}
+                >
+                  Send Funds
+                </Button>
+              ) : (
+                <ConnectWallet switchToActiveChain />
+              )}
             </VStack>
           )}
         </VStack>
