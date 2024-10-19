@@ -7,6 +7,7 @@ import {
   Input,
   Switch,
   Text,
+  useToast,
   VStack,
 } from "@chakra-ui/react";
 import {
@@ -25,17 +26,16 @@ export default function Send() {
   const [selectTab, setSelectTab] = useState(0);
   const [addresses, setAddresses] = useState([""]);
   const [amount, setAmount] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [importedAddresses, setImportedAddresses] = useState([]);
+
+  const toast = useToast();
 
   const address = useAddress();
   const { data: balance } = useBalance();
 
   const { contract } = useContract(contractAddress, contractABI);
-  const {
-    mutateAsync: sendETH,
-    isLoading,
-    error,
-  } = useContractWrite(contract, "sendETH");
+  const { mutateAsync: error } = useContractWrite(contract, "sendETH");
 
   const tabs = ["Manual Send", "Import from CSV"]; // Tabs array
 
@@ -67,7 +67,7 @@ export default function Send() {
         return { address: address.trim(), amount: amount.trim() };
       });
       setImportedAddresses(parsedAddresses);
-      console.log("Imported addresses:", parsedAddresses);
+      // console.log("Imported addresses:", parsedAddresses);
     };
     reader.readAsText(file);
   };
@@ -81,6 +81,54 @@ export default function Send() {
   const removeImportedAddressField = (index) => {
     const updatedAddresses = importedAddresses.filter((_, i) => i !== index);
     setImportedAddresses(updatedAddresses);
+  };
+
+  const handleSendImportedTokens = async () => {
+    const importedAddressesMap = importedAddresses.map((recipient) => ({
+      recipient: recipient.address,
+      amount: ethers.utils.parseEther(recipient.amount.toString()),
+    }));
+
+    const _recipients = importedAddressesMap.map((pair) => pair.recipient);
+    const _amounts = importedAddressesMap.map((pair) => pair.amount);
+
+    // Calculate total amount in Wei directly
+    const totalAmountInWei = _amounts.reduce(
+      (acc, curr) => acc.add(curr),
+      ethers.BigNumber.from(0)
+    );
+
+    console.log(importedAddressesMap);
+
+    setIsLoading(true);
+
+    try {
+      // Send two separate arrays to sendETH
+      const tx = await contract.call("sendETH", [_recipients, _amounts], {
+        value: totalAmountInWei,
+      });
+      console.log("Transaction successful:", tx);
+      toast({
+        title: "Transaction successful.",
+        description: `Transaction hash: ${tx.receipt.transactionHash}`,
+        status: "success",
+        duration: 15000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+    } catch (error) {
+      console.error("Error sending tokens:", error); // Use console.error for errors
+      toast({
+        title: "Transaction failed.",
+        description: error.message || "An error occurred while sending tokens.",
+        status: "error",
+        duration: 15000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+    } finally {
+      setIsLoading(false); // Ensure loading state is reset in finally block
+    }
   };
 
   // send token function
@@ -99,6 +147,7 @@ export default function Send() {
       amount: amountPerRecipient,
     }));
 
+    setIsLoading(true);
     // Separate recipients and amounts into two arrays
     const _recipients = recipientAmountPairs.map((pair) => pair.recipient);
     const _amounts = recipientAmountPairs.map((pair) => pair.amount);
@@ -106,13 +155,32 @@ export default function Send() {
     console.log("Recipients:", recipientAmountPairs);
     try {
       // Send two separate arrays to sendETH
-      const tx = await sendETH({ args: [_recipients, _amounts] });
-      // const tx = await contract.call("sendETH", [_recipients, _amounts]);
-      await tx.wait();
+      const tx = await contract.call("sendETH", [_recipients, _amounts], {
+        value: totalAmount,
+      });
       console.log("Transaction successful:", tx);
-      console.log("Tokens sent successfully", recipientAmountPairs);
+      console.log("Tokens sent successfully");
+      toast({
+        title: "Transaction successful.",
+        description: `Transaction hash: ${tx.receipt.transactionHash}`,
+        status: "success",
+        duration: 15000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+      setIsLoading(false);
     } catch (error) {
-      console.log("Error sending tokens:", error);
+      console.error("Error sending tokens:", error); // Use console.error for errors
+      toast({
+        title: "Transaction failed.",
+        description: error.message || "An error occurred while sending tokens.",
+        status: "error",
+        duration: 15000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+    } finally {
+      setIsLoading(false); // Ensure loading state is reset in finally block
     }
   };
 
@@ -137,6 +205,7 @@ export default function Send() {
             {balance?.symbol}
           </Text>
         </Flex>
+        <Text>Address: {address}</Text>
         <VStack
           minH="360px"
           bg="whiteAlpha.50"
@@ -212,23 +281,17 @@ export default function Send() {
                     hidden
                   />
                 </Button>
-                {importedAddresses.length > 0 && (
+                {importedAddresses.length > 0 && address && (
                   <Button
-                    as="label"
-                    htmlFor="fileInput"
                     bg="brand.200"
                     color="brand.100"
+                    onClick={() => handleSendImportedTokens()}
+                    isLoading={isLoading}
                   >
                     Send funds
-                    <Input
-                      id="fileInput"
-                      type="file"
-                      accept=".csv"
-                      onChange={handleFileChange}
-                      hidden
-                    />
                   </Button>
                 )}
+                {!address && <ConnectWallet switchToActiveChain={true} />}
               </VStack>
             </VStack>
           )}
