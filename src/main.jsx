@@ -7,12 +7,14 @@ import theme from "./theme/theme.jsx";
 import "@fontsource-variable/inter";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
 import { BaseSepoliaTestnet } from "@thirdweb-dev/chains";
+import "@coinbase/onchainkit/styles.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThirdwebProvider
       activeChain={BaseSepoliaTestnet}
       clientId="648dd0dd39c83ec04b42837410d06c75"
+      autoConnect={true}
     >
       <ChakraProvider theme={theme}>
         <App />

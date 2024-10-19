@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Flex,
   FormControl,
@@ -28,7 +29,6 @@ export default function Send() {
 
   const address = useAddress();
   const { data: balance } = useBalance();
-  //   console.log(balance);
 
   const { contract } = useContract(contractAddress, contractABI);
   const {
@@ -83,15 +83,34 @@ export default function Send() {
     setImportedAddresses(updatedAddresses);
   };
 
+  // send token function
   const handleSendTokens = async () => {
-    if (!contract && !address) return;
+    if (!contract || !address) return;
 
-    const _recipients = addresses.filter((address) => address !== "");
-    const _amounts = Array(_recipients.length).fill(ethers.utils.parseEther(amount.toString()));
+    const recipients = addresses.filter((address) => address !== "");
+    const totalAmount = ethers.utils.parseEther(amount.toString());
 
+    const recipientCount = recipients.length;
+    const amountPerRecipient = totalAmount.div(recipientCount);
+
+    // Create an array of objects, each containing a recipient and amount
+    const recipientAmountPairs = recipients.map((recipient) => ({
+      recipient,
+      amount: amountPerRecipient,
+    }));
+
+    // Separate recipients and amounts into two arrays
+    const _recipients = recipientAmountPairs.map((pair) => pair.recipient);
+    const _amounts = recipientAmountPairs.map((pair) => pair.amount);
+
+    console.log("Recipients:", recipientAmountPairs);
     try {
-      await sendETH({ args: [_recipients, _amounts] });
-      console.log("Tokens sent successfully", _recipients, _amounts);
+      // Send two separate arrays to sendETH
+      const tx = await sendETH({ args: [_recipients, _amounts] });
+      // const tx = await contract.call("sendETH", [_recipients, _amounts]);
+      await tx.wait();
+      console.log("Transaction successful:", tx);
+      console.log("Tokens sent successfully", recipientAmountPairs);
     } catch (error) {
       console.log("Error sending tokens:", error);
     }
@@ -101,6 +120,7 @@ export default function Send() {
     <>
       <VStack minH="80vh" justify="center" align={"center"} gap="16px">
         <Text>Send to tokens multiple addresses</Text>
+
         <Flex
           maxW="md"
           w="full"
@@ -249,6 +269,7 @@ export default function Send() {
               <FormControl display="flex" gap="12px" alignItems="center">
                 <FormLabel m="0">Auto send</FormLabel>
                 <Switch size="md" colorScheme="brand" />
+                <Box></Box>
               </FormControl>
               {address ? (
                 <Button
@@ -256,12 +277,14 @@ export default function Send() {
                   bg="brand.200"
                   color="brand.100"
                   onClick={() => handleSendTokens()}
+                  isLoading={isLoading}
                 >
                   Send Funds
                 </Button>
               ) : (
-                <ConnectWallet switchToActiveChain />
+                <ConnectWallet switchToActiveChain={true} />
               )}
+              {error && <Text color="red.500">{error.message}</Text>}
             </VStack>
           )}
         </VStack>
