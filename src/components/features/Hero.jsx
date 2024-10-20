@@ -1,4 +1,4 @@
-import { Button, Heading, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, Heading, Image, Text, VStack } from "@chakra-ui/react";
 import { HiArrowSmDown } from "react-icons/hi";
 
 export default function Hero() {
@@ -9,18 +9,16 @@ export default function Hero() {
         minH="70vh"
         align="center"
         justify="center"
-        // backgroundImage="url('/public/pattern.svg')"
-        // backgroundPosition="center"
-        // backgroundRepeat="no-repeat"
       >
         <VStack gap="16px">
+          <Box w='240px'>
+            <Image src="/ChainWave.png" alt="logo" />
+          </Box>
           <Heading textAlign="center" fontSize={[32, 48]}>
-            Welcome to Multi Sender
+            Welcome to Chain Wave
           </Heading>
           <Text maxW="520px" textAlign="center" color="whiteAlpha.600">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis
-            adipisci quidem incidunt fuga dolorem cumque asperiores ipsum animi
-            ut, provident perspiciatis totam.
+          Streamline Your Token Distribution
           </Text>
           <Button
             px="24px"
@@ -33,8 +31,9 @@ export default function Hero() {
             gap="12px"
             align="center"
             color="brand.200"
+            onClick={() => window.scrollTo({ top: 1000, behavior: 'smooth' })}
           >
-            Get Started <HiArrowSmDown size={23} />{" "}
+            Get Started <HiArrowSmDown size={23} />
           </Button>
         </VStack>
       </VStack>

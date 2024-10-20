@@ -16,6 +16,7 @@ import {
   useBalance,
   useContract,
   useContractWrite,
+  useDisconnect,
 } from "@thirdweb-dev/react";
 import { ethers } from "ethers";
 import { useState } from "react"; // Import useState
@@ -32,6 +33,8 @@ export default function Send() {
   const toast = useToast();
 
   const address = useAddress();
+  const disconnect = useDisconnect();
+
   const { data: balance } = useBalance();
 
   const { contract } = useContract(contractAddress, contractABI);
@@ -186,31 +189,33 @@ export default function Send() {
 
   return (
     <>
-      <VStack minH="80vh" justify="center" align={"center"} gap="16px">
+      <VStack minH="60vh" justify="start" align={"center"} gap="16px">
         <Text>Send to tokens multiple addresses</Text>
-
-        <Flex
-          maxW="md"
-          w="full"
-          justify="space-between"
-          align="center"
-          gap="24px"
-          px="16px"
-        >
-          <Text>Balance</Text>
-          <Text>
-            {balance
-              ? parseFloat(ethers.utils.formatEther(balance.value)).toFixed(4)
-              : "0.00"}{" "}
-            {balance?.symbol}
-          </Text>
-        </Flex>
-        <Text>Address: {address}</Text>
+        {address && (
+          <Flex
+            maxW="md"
+            w="full"
+            justify="space-between"
+            align="center"
+            gap="24px"
+            // px="16px"
+          >
+            <Button onClick={() => disconnect()}>
+              {address?.substring(0, 12) + "..."}
+            </Button>
+            <Text>
+              {balance
+                ? parseFloat(ethers.utils.formatEther(balance.value)).toFixed(4)
+                : "0.00"}{" "}
+              {balance?.symbol}
+            </Text>
+          </Flex>
+        )}
         <VStack
           minH="360px"
-          bg="whiteAlpha.50"
           rounded="16px"
           maxW="md"
+          bg="whiteAlpha.100"
           w="full"
           gap="24px"
           p="24px"
